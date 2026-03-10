@@ -1,0 +1,141 @@
+import { useEffect, useRef } from "react";
+import { Canvas as FabricCanvas, FabricImage } from "fabric";
+import useEditorStore from "../../../store/editorStore";
+
+interface CanvasProps {
+  imageUrl?: string;
+  gifUrl?: string;
+  width: number;
+  height: number;
+}
+
+const Canvas = ({ imageUrl, gifUrl, width, height }: CanvasProps) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const setCanvas = useEditorStore((state) => state.setCanvas);
+  const clearCanvas = useEditorStore((state) => state.clearCanvas);
+
+  const elementRef = useRef<HTMLDivElement>(null);
+
+  const animationRef = useRef<number>(0);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    if (!canvasRef.current || !elementRef.current) return;
+
+    const rect = elementRef.current.getBoundingClientRect();
+    const margin = 0.95;
+    const coef = margin * Math.min(rect.width / width, rect.height / height);
+
+    const canvasW = coef * width;
+    const canvasH = coef * height;
+
+    console.log(rect);
+
+    // Создаем канвас
+    const canvas = new FabricCanvas(canvasRef.current, {
+      width: canvasW,
+      height: canvasH,
+      backgroundColor: "white",
+    });
+
+    // store
+    setCanvas(canvas);
+
+    // adaptive
+    const adaptiveResize = () => {
+      if (!elementRef.current || !canvas) return;
+      const rect = elementRef.current.getBoundingClientRect();
+      const newCoef = margin * Math.min(rect.width / width, rect.height / height);
+
+      const newCanvasW = newCoef * width;
+      const newCanvasH = newCoef * height;
+
+      canvas.setDimensions({
+        width: newCanvasW,
+        height: newCanvasH,
+      });
+    };
+
+    // listen
+    window.addEventListener("resize", adaptiveResize);
+
+    // изображение если есть
+    if (imageUrl) {
+      FabricImage.fromURL(imageUrl).then((img) => {
+        img.scale(coef);
+        img.top = canvasH / 2;
+        img.left = canvasW / 2;
+
+        canvas.add(img);
+        canvas.renderAll();
+        
+      });
+    }
+
+// Загружаем гифку  если есть
+    if (gifUrl) {
+      const videoElement = document.createElement('video');
+      videoElement.src = gifUrl;
+      videoElement.loop = true;
+      videoElement.muted = true;
+      videoElement.crossOrigin = 'anonymous';
+      videoElement.playsInline = true;
+      
+      videoRef.current = videoElement;
+
+      videoElement.onloadedmetadata = () => {
+        const videoImage = new FabricImage(videoElement, {
+          left: canvasW / 2,
+          top: canvasH / 2,
+          originX: 'center',
+          originY: 'center',
+          width: 300,
+          height: (videoElement.videoHeight / videoElement.videoWidth) * 300,
+        });
+
+        canvas.add(videoImage);
+        
+        // Запускаем видео
+        videoElement.play().catch(e => console.warn('Autoplay failed:', e));
+
+        const renderVideo = () => {
+          if (videoElement.readyState >= 2) {
+            videoImage.dirty = true; 
+            canvas.renderAll();
+          }
+          animationRef.current = requestAnimationFrame(renderVideo);
+        };
+        renderVideo();
+
+        canvas.setActiveObject(videoImage);
+        canvas.renderAll();
+      };
+    }
+
+
+    // Очистка
+    return () => {
+
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current = null;
+      }
+      canvas.dispose();
+      clearCanvas();
+    };
+  }, [imageUrl, width, height, setCanvas, gifUrl]);
+
+  return (
+    <div
+      ref={elementRef}
+      className="flex items-center justify-center min-h-full"
+    >
+      <canvas ref={canvasRef} className="border shadow-lg" />
+    </div>
+  );
+};
+
+export default Canvas;
