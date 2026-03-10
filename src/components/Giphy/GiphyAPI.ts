@@ -18,7 +18,7 @@ export interface GiphyResponse {
   data: GiphyGif[];
 }
 
-const API_KEY = 'ключ';
+const API_KEY = 'yIkxhSkLVAmxgbltNEg5MDulVoSp8OpU';
 const BASE_URL = 'https://api.giphy.com/v1/gifs';
 
 export const giphyApi = {
