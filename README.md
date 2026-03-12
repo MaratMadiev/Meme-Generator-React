@@ -11,6 +11,15 @@
 npm install
 ```
 
+### 1.5
+Зависимости (если ничего не забыл)
+```
+npm i react react-dom react-router-dom fabric zustand axios modern-gif gif.js
+```
+
+```
+npm i -D @types/react @types/react-dom @types/fabric @types/gif.js @vitejs/plugin-react vite tailwindcss @tailwindcss/vite typescript @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint eslint-plugin-react-hooks eslint-plugin-react-refresh globals
+```
 ### 2. Настройка GIPHY API
 
 1. Получить API ключ на [GIPHY Developers](https://developers.giphy.com/)
