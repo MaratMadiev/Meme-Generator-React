@@ -37,13 +37,15 @@ npm run preview
 ### 4. Зависимости
 
 ```json
-{
-  "react": "^18.2.0",
-  "fabric": "^6.0.0",
-  "zustand": "^4.4.0",
-  "axios": "^1.6.0",
-  "react-router-dom": "^6.20.0",
-  "tailwindcss": "^3.4.0"
+"dependencies": {
+  "react": "^18.3.1",
+  "react-dom": "^18.3.1",
+  "react-router-dom": "^6.30.0",
+  "fabric": "^6.5.4",
+  "zustand": "^4.5.6",
+  "axios": "^1.8.4",
+  "modern-gif": "^2.0.4",
+  "gif.js": "^0.2.0"
 }
 ```
 

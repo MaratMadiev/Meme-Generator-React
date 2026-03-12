@@ -14,6 +14,9 @@ interface EditorStore {
 
   canvasCoef: number;
   setCanvasCoef: (coef: number) => void;
+
+  gifMaxLen: number;
+  setGifMaxLen : (len: number) => void;
 }
 
 const useEditorStore = create<EditorStore>((set) => ({
@@ -27,7 +30,10 @@ const useEditorStore = create<EditorStore>((set) => ({
   setStrokeColor: (color) => set({ strokeColor: color }),
 
   canvasCoef: 0,
-  setCanvasCoef: (coef: number) => set({canvasCoef: coef})
+  setCanvasCoef: (coef: number) => set({canvasCoef: coef}),
+
+  gifMaxLen: 0,
+  setGifMaxLen: (len: number) => set({gifMaxLen: len})
 }))
 
 export default useEditorStore;

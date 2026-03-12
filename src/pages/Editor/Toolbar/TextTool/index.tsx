@@ -21,6 +21,7 @@ const TextTool = () => {
       strokeWidth: 3,
       textAlign: 'center',
     });
+    
 
     canvas.add(text);
     canvas.setActiveObject(text);

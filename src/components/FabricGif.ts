@@ -137,4 +137,12 @@ export default class FabricGif extends FabricImage {
   get type(): string {
     return 'gif'
   }
+
+  get duration(): number {
+    return this.frameDuration * this.loadedImages.length;
+  }
+
+  get durationSeconds(): number {
+    return this.duration / 1000;
+  }
 }

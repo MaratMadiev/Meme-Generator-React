@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import useEditorStore from "../../../../store/editorStore";
+import type FabricGif from "../../../../components/FabricGif";
+import GIF from "gif.js";
+import gifWorkerURL from 'gif.js/dist/gif.worker.js?url';
 
 interface GiphyPopupProps {
   onClose: () => void;
@@ -11,9 +14,17 @@ const GiphyPopup: React.FC<GiphyPopupProps> = ({ onClose }) => {
   const canvas = useEditorStore((state) => state.canvas);
   const coef = useEditorStore((state) => state.canvasCoef);
 
-  const [width, setWidth] = useState<number>((canvas?.width || 800) / coef);
-  const [height, setHeight] = useState<number>((canvas?.height || 600) / coef);
-  const [keepRatio, setKeepRatio] = useState(true);
+  const [width, setWidth] = useState<number>(
+    Math.floor((canvas?.width || 800) / coef),
+  );
+  const [height, setHeight] = useState<number>(
+    Math.floor((canvas?.height || 600) / coef),
+  );
+
+  const [fps, setFps] = useState<number>(Math.floor(15));
+  const [videoLen, setVideoLen] = useState<number>(
+    useEditorStore((state) => state.gifMaxLen),
+  );
 
   async function getBlobImageFromCanvas(w: number, h: number) {
     if (!canvas) return;
@@ -21,7 +32,7 @@ const GiphyPopup: React.FC<GiphyPopupProps> = ({ onClose }) => {
     const scaleCoef = Math.max(w / canvas.width, h / canvas.height);
     const dataURL = canvas.toDataURL({
       format: "png",
-      quality: 1,
+      quality: 0.9,
       multiplier: scaleCoef,
     });
 
@@ -51,8 +62,76 @@ const GiphyPopup: React.FC<GiphyPopupProps> = ({ onClose }) => {
     const newDataURL = await getBlobImageFromCanvas(w, h);
     const link = document.createElement("a");
     link.download = "meme.png";
-    link.href = newDataURL || '';
+    link.href = newDataURL || "";
     link.click();
+  };
+
+  const handleExportGif = async (
+    w: number,
+    h: number,
+    fps: number,
+    len: number,
+  ) => {
+    if (!canvas) return;
+    const gifs = canvas?.getObjects("gif");
+
+    w = Math.floor(w);
+    h = Math.floor(h);
+
+    const gifjsGif = new GIF({
+      workers: 1,
+      quality: 10,
+      workerScript: gifWorkerURL,
+    });
+
+    gifs?.forEach((gif) => {
+      const gifFabric = gif as FabricGif;
+      gifFabric.stop();
+    });
+
+    const frameCount = Math.floor(fps * len);
+    const delayMs = (1 / fps) * 1000;
+
+    for (let index = 0; index < frameCount; index++) {
+      const timeMs = index * delayMs;
+      gifs?.forEach((gif) => {
+        const gifFabric = gif as FabricGif;
+        gifFabric.setSourceFromTime(timeMs);
+      });
+      canvas.renderAll();
+
+      const dataUrl = await getBlobImageFromCanvas(w,h);
+      if (!dataUrl) continue;
+
+      const img: HTMLImageElement = new Image();
+      img.src = dataUrl;
+
+      await new Promise((resolve, reject) => {
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+      });
+      console.log(214)
+      gifjsGif.addFrame(img, {delay: delayMs})
+
+    }
+
+    gifjsGif.on('finished', (blob) => {
+      const url = URL.createObjectURL(blob);
+      
+      window.open(url);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "meme.gif";
+      link.click();
+    })
+
+    gifjsGif.render();
+
+
+    gifs?.forEach((gif) => {
+      const gifFabric = gif as FabricGif;
+      gifFabric.play();
+    });
   };
 
   return (
@@ -75,14 +154,22 @@ const GiphyPopup: React.FC<GiphyPopupProps> = ({ onClose }) => {
           <button
             type="button"
             onClick={() => setMode("image")}
-            className={` flex-1 px-3 py-3 bg-gray-${mode == "image" ? 600 : 400} text-white text-2xl rounded-lg hover:bg-gray-600 active:bg-gray-700`}
+            className={`flex-1 px-3 py-3 text-white text-2xl rounded-lg transition-colors ${
+              mode === "image"
+                ? "bg-gray-600 hover:bg-gray-700"
+                : "bg-gray-300 hover:bg-gray-400"
+            }`}
           >
             Картинки
           </button>
           <button
             type="button"
             onClick={() => setMode("gif")}
-            className={`flex-1 px-3 py-3 bg-gray-${mode == "gif" ? 600 : 400} text-white text-2xl  rounded-lg hover:bg-gray-600 active:bg-gray-700`}
+            className={`flex-1 px-3 py-3 text-white text-2xl rounded-lg transition-colors ${
+              mode === "gif"
+                ? "bg-gray-600 hover:bg-gray-700"
+                : "bg-gray-300 hover:bg-gray-400"
+            }`}
           >
             Гифки
           </button>
@@ -90,6 +177,7 @@ const GiphyPopup: React.FC<GiphyPopupProps> = ({ onClose }) => {
 
         {/* режимы */}
         <div className="p-4">
+          {/*картинки*/}
           {mode === "image" && (
             <div className="space-y-4">
               <h2 className="text-md text-2xl font-semibold">
@@ -135,11 +223,82 @@ const GiphyPopup: React.FC<GiphyPopupProps> = ({ onClose }) => {
               </button>
             </div>
           )}
-
+          {/* Гифки */}
           {mode === "gif" && (
-            <div className="text-center text-gray-500 py-8">
-              {/* Здесь будет контент для гифок */}
-              Режим гифок в разработке
+            <div className="space-y-4">
+              <h2 className="text-md text-2xl font-semibold">
+                Настройки экспорта изображения
+              </h2>
+              <div className="flex gap-4 justify-center">
+                {/* Ширина */}
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ширина (px)
+                  </label>
+                  <input
+                    type="number"
+                    value={width}
+                    onChange={(e) => setWidth(Number(e.target.value))}
+                    min="10"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400"
+                  />
+                </div>
+
+                {/* Высота */}
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Высота (px)
+                  </label>
+                  <input
+                    type="number"
+                    value={height}
+                    onChange={(e) => setHeight(Number(e.target.value))}
+                    min="10"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-4 justify-center">
+                {/* Кол-во кадров в секунду */}
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Кадров в секунду
+                  </label>
+                  <input
+                    type="number"
+                    value={fps}
+                    onChange={(e) => setFps(Number(e.target.value))}
+                    min="3"
+                    max="20"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400"
+                  />
+                </div>
+
+                {/* Длина гифки (сек.) */}
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Длина (в секундах)
+                  </label>
+                  <input
+                    type="number"
+                    value={videoLen}
+                    onChange={(e) => setVideoLen(Number(e.target.value))}
+                    min="1"
+                    max="30"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400"
+                  />
+                </div>
+              </div>
+
+              {/* Кнопка экспорта */}
+              <button
+                type="button"
+                onClick={() => handleExportGif(width, height, fps, videoLen)}
+                className="w-full mt-4 px-4 py-3 bg-green-600 text-white text-lg rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors"
+              >
+                Экспорт
+              </button>
             </div>
           )}
         </div>

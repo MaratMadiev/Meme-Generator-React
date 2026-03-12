@@ -13,6 +13,8 @@ const GiphyPopup: React.FC<GiphyPopupProps> = ({ onClose }) => {
   const { gifs, loading, error, searchGifs, getTrending } = useGiphy();
 
   const canvas = useEditorStore((state) => state.canvas);
+  const maxLen = useEditorStore((state) => state.gifMaxLen);
+  const setMaxLen = useEditorStore((state) => state.setGifMaxLen);
 
   const handleGiphySelect = async (gifUrl: string) => {
     if (!canvas) return;
@@ -30,6 +32,8 @@ const GiphyPopup: React.FC<GiphyPopupProps> = ({ onClose }) => {
       canvas.add(gifInstance);
       gifInstance.loopPlay();
       canvas.renderAll();
+
+      setMaxLen(Math.max(maxLen, gifInstance.durationSeconds))
 
       onClose();
     } catch (error) {

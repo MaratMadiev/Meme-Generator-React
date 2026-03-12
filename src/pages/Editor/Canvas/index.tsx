@@ -6,6 +6,7 @@ import FabricGif from "../../../components/FabricGif";
 interface CanvasProps {
   imageUrl?: string;
   gifUrl?: string;
+  len?: number;
   width: number;
   height: number;
 }
@@ -16,6 +17,7 @@ const Canvas = ({ imageUrl, gifUrl, width, height }: CanvasProps) => {
   const clearCanvas = useEditorStore((state) => state.clearCanvas);
 
   const setCoef = useEditorStore((state) => state.setCanvasCoef) 
+  const setLen = useEditorStore((state) => state.setGifMaxLen)
 
   const elementRef = useRef<HTMLDivElement>(null);
 
@@ -84,6 +86,8 @@ const Canvas = ({ imageUrl, gifUrl, width, height }: CanvasProps) => {
         canvas.add(gif);
         gif.loopPlay();
         canvas.renderAll();
+
+        setLen(gif.durationSeconds)
       })
     }
 
