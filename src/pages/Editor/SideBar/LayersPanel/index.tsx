@@ -41,7 +41,7 @@ const LayersPanel = () => {
       const txt = obj as FabricText;
       return `Текст "${txt.text?.slice(0, 10)}..."` || "Текст";
     } else {
-      return obj.type || "Объект";
+      return typeToText(obj.type) || "Объект";
     }
   }
 
@@ -140,3 +140,16 @@ const LayersPanel = () => {
 };
 
 export default LayersPanel;
+
+function typeToText(type: string) {
+  switch (type) {
+    case 'image': return 'Картинка'
+    case 'circle': return 'Круг'
+    case 'rect': return 'Прямоугольник'
+    case 'triangle': return 'Треугольник'
+    case 'gif': return 'Гифка'
+    default: return 'Объект'  
+  }
+}
+
+

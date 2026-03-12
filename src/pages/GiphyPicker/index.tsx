@@ -11,14 +11,17 @@ const GiphyPicker = () => {
     getTrending(); // Загружаем популярные при открытии
   }, []);
 
-  const handleSelectGif = (mp4Url: string) => {
+  const handleSelectGif = (mp4Url: string, width: string, height: string) => {
+    
     navigate('/editor', {
       state: {
         gifUrl: mp4Url,
         mode: 'gif',
-        width: 800,
-        height: 600
+        imageWidth: parseInt(width),
+        imageHeight: parseInt(height),
+        
       }
+      
     });
   };
 
@@ -38,7 +41,7 @@ const GiphyPicker = () => {
             onClick={() => navigate('/')}
             className="text-gray-600 hover:text-gray-900 flex items-center gap-2"
           >
-            ← На главную
+            На главную
           </button>
           <h1 className="text-xl font-bold text-gray-600">Выбор гифки</h1>
           <div className="w-20"></div> {/* для центрирования */}
@@ -95,7 +98,7 @@ const GiphyPicker = () => {
           {gifs.map((gif) => (
             <div
               key={gif.id}
-              onClick={() => handleSelectGif(gif.images.fixed_width.mp4)}
+              onClick={() => handleSelectGif(gif.images.original.url, gif.images.original.width, gif.images.original.height)}
               className="cursor-pointer bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow"
             >
               <img

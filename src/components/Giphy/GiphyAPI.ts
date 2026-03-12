@@ -10,6 +10,12 @@ export interface GiphyGif {
       mp4: string;
       width: string;
       height: string;
+    },
+    original: {
+      url: string;
+      mp4: string;
+      width: string;
+      height: string;
     }
   };
 }
@@ -40,6 +46,20 @@ export const giphyApi = {
       throw error;
     }
   },
+
+async getGifAsArrayBuffer(url: string): Promise<ArrayBuffer> {
+    try {
+      const response = await axios.get(url, {
+        responseType: 'arraybuffer'
+      });
+      
+      return response.data; 
+    } catch (error) {
+      console.error('Ошибка при загрузке гифки:', error);
+      throw error;
+    }
+  },
+
 
   // Популярные гифки
   async trending(limit: number = 20): Promise<GiphyGif[]> {

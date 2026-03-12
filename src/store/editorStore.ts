@@ -7,13 +7,13 @@ interface EditorStore {
   setCanvas: (canvas: Canvas) => void;
   clearCanvas: () => void;
 
-  currentShape: "rect" | "circle" | "triangle";
-  setCurrentShape: (shape: "rect" | "circle" | "triangle") => void;
-
   fillColor: string;
   setFillColor: (color: string) => void;
   strokeColor: string;
   setStrokeColor: (color: string) => void;
+
+  canvasCoef: number;
+  setCanvasCoef: (coef: number) => void;
 }
 
 const useEditorStore = create<EditorStore>((set) => ({
@@ -21,13 +21,13 @@ const useEditorStore = create<EditorStore>((set) => ({
   setCanvas: (canvas) => set({ canvas }),
   clearCanvas: () => set({ canvas: null }),
   
-  currentShape: 'rect',
-  setCurrentShape: (shape) => set({ currentShape: shape }),
-  
   fillColor: '#ffffff',
   setFillColor: (color) => set({ fillColor: color }),
   strokeColor: '#000000',
-  setStrokeColor: (color) => set({ strokeColor: color })
+  setStrokeColor: (color) => set({ strokeColor: color }),
+
+  canvasCoef: 0,
+  setCanvasCoef: (coef: number) => set({canvasCoef: coef})
 }))
 
 export default useEditorStore;

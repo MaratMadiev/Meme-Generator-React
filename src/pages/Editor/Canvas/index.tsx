@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, FabricImage } from "fabric";
 import useEditorStore from "../../../store/editorStore";
+import FabricGif from "../../../components/FabricGif";
 
 interface CanvasProps {
   imageUrl?: string;
@@ -13,6 +14,8 @@ const Canvas = ({ imageUrl, gifUrl, width, height }: CanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const setCanvas = useEditorStore((state) => state.setCanvas);
   const clearCanvas = useEditorStore((state) => state.clearCanvas);
+
+  const setCoef = useEditorStore((state) => state.setCanvasCoef) 
 
   const elementRef = useRef<HTMLDivElement>(null);
 
@@ -28,8 +31,8 @@ const Canvas = ({ imageUrl, gifUrl, width, height }: CanvasProps) => {
 
     const canvasW = coef * width;
     const canvasH = coef * height;
-
-    console.log(rect);
+    
+    setCoef(coef);
 
     // Создаем канвас
     const canvas = new FabricCanvas(canvasRef.current, {
@@ -41,8 +44,8 @@ const Canvas = ({ imageUrl, gifUrl, width, height }: CanvasProps) => {
     // store
     setCanvas(canvas);
 
-    // adaptive
-    const adaptiveResize = () => {
+    // adaptive very unready
+    /*const adaptiveResize = () => {
       if (!elementRef.current || !canvas) return;
       const rect = elementRef.current.getBoundingClientRect();
       const newCoef = margin * Math.min(rect.width / width, rect.height / height);
@@ -54,10 +57,11 @@ const Canvas = ({ imageUrl, gifUrl, width, height }: CanvasProps) => {
         width: newCanvasW,
         height: newCanvasH,
       });
-    };
+    }; 
+    */
 
     // listen
-    window.addEventListener("resize", adaptiveResize);
+    //window.addEventListener("resize", adaptiveResize);
 
     // изображение если есть
     if (imageUrl) {
@@ -68,50 +72,20 @@ const Canvas = ({ imageUrl, gifUrl, width, height }: CanvasProps) => {
 
         canvas.add(img);
         canvas.renderAll();
-        
       });
     }
 
-// Загружаем гифку  если есть
     if (gifUrl) {
-      const videoElement = document.createElement('video');
-      videoElement.src = gifUrl;
-      videoElement.loop = true;
-      videoElement.muted = true;
-      videoElement.crossOrigin = 'anonymous';
-      videoElement.playsInline = true;
-      
-      videoRef.current = videoElement;
+      FabricGif.fromUrl(gifUrl).then((gif) => {
+        gif.scale(coef);
+        gif.top = canvasH / 2;
+        gif.left = canvasW / 2;
 
-      videoElement.onloadedmetadata = () => {
-        const videoImage = new FabricImage(videoElement, {
-          left: canvasW / 2,
-          top: canvasH / 2,
-          originX: 'center',
-          originY: 'center',
-          width: 300,
-          height: (videoElement.videoHeight / videoElement.videoWidth) * 300,
-        });
-
-        canvas.add(videoImage);
-        
-        // Запускаем видео
-        videoElement.play().catch(e => console.warn('Autoplay failed:', e));
-
-        const renderVideo = () => {
-          if (videoElement.readyState >= 2) {
-            videoImage.dirty = true; 
-            canvas.renderAll();
-          }
-          animationRef.current = requestAnimationFrame(renderVideo);
-        };
-        renderVideo();
-
-        canvas.setActiveObject(videoImage);
+        canvas.add(gif);
+        gif.loopPlay();
         canvas.renderAll();
-      };
+      })
     }
-
 
     // Очистка
     return () => {

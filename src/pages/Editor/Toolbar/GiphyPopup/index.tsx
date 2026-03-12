@@ -1,22 +1,48 @@
-import React, { useState, useEffect } from 'react';
-import type { GiphyGif } from './GiphyAPI';
-import { useGiphy } from './useGiphy';
+import React, { useState, useEffect, type ChangeEvent } from 'react';
+import type { GiphyGif } from '../../../../components/Giphy/GiphyAPI';
+import { useGiphy } from '../../../../components/Giphy/useGiphy';
+import useEditorStore from '../../../../store/editorStore';
+import FabricGif from '../../../../components/FabricGif';
 
 interface GiphyPopupProps {
   onClose: () => void;
-  onSelect: (mp4Url: string) => void; 
 }
 
-const GiphyPopup: React.FC<GiphyPopupProps> = ({ onClose, onSelect }) => {
+const GiphyPopup: React.FC<GiphyPopupProps> = ({ onClose }) => {
   const [searchInput, setSearchInput] = useState('');
   const { gifs, loading, error, searchGifs, getTrending } = useGiphy();
+
+  const canvas = useEditorStore((state) => state.canvas);
+
+  const handleGiphySelect = async (gifUrl: string) => {
+    if (!canvas) return;
+
+    try {
+      const gifInstance = await FabricGif.fromUrl(gifUrl);
+
+      gifInstance.set({
+        left: canvas.width / 2,
+        top: canvas.height / 2,
+        originX: "center",
+        originY: "center",
+      });
+
+      canvas.add(gifInstance);
+      gifInstance.loopPlay();
+      canvas.renderAll();
+
+      onClose();
+    } catch (error) {
+      console.error("Ошибка загрузки гифки:", error);
+    }
+  };
 
   
   useEffect(() => {
     getTrending();
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = (e: ChangeEvent) => {
     e.preventDefault();
     if (searchInput.trim()) {
       searchGifs(searchInput);
@@ -24,7 +50,7 @@ const GiphyPopup: React.FC<GiphyPopupProps> = ({ onClose, onSelect }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg w-[800px] max-h-[80vh] flex flex-col">
         {/* Заголовок */}
         <div className="flex justify-between items-center p-4 border-b">
@@ -45,12 +71,12 @@ const GiphyPopup: React.FC<GiphyPopupProps> = ({ onClose, onSelect }) => {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Поиск гифок..."
-              className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"
             />
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:bg-purple-300"
+              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:bg-gray-300"
             >
               Поиск
             </button>
@@ -68,7 +94,7 @@ const GiphyPopup: React.FC<GiphyPopupProps> = ({ onClose, onSelect }) => {
         <div className="flex-1 overflow-y-auto p-4">
           {loading && (
             <div className="text-center py-8">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-purple-500 border-t-transparent"></div>
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-500 border-t-transparent"></div>
               <p className="mt-2 text-gray-600">Загрузка...</p>
             </div>
           )}
@@ -89,7 +115,7 @@ const GiphyPopup: React.FC<GiphyPopupProps> = ({ onClose, onSelect }) => {
             {gifs.map((gif: GiphyGif) => (
               <div
                 key={gif.id}
-                onClick={() => onSelect(gif.images.fixed_width.mp4)}
+                onClick={() => handleGiphySelect(gif.images.original.url)}
                 className="cursor-pointer border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
               >
                 <img

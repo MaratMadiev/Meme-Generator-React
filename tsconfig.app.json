@@ -22,7 +22,10 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+    "paths": {
+      "gif-frames": ["./src/types/gif-frames.d.ts"]
+    }
   },
   "include": ["src"]
 }
